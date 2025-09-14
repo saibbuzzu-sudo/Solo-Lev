@@ -1,5 +1,6 @@
-// Change this line:
-recentCompletions.forEach(eval => {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Remove the experimental.appDir - it's now default in Next.js 14
+}
 
-// To this:
-recentCompletions.forEach(completion => {
+module.exports = nextConfig
