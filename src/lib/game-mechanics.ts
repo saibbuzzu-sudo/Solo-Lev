@@ -104,7 +104,7 @@ export function suggestStatAllocation(
   
   // Accumulate weights from recent completions
   recentCompletions.forEach(completion => {
-    Object.entries(eval.statWeights).forEach(([stat, weight]) => {
+    Object.entries(completion.statWeights).forEach(([stat, weight]) => {
       statWeights[stat as keyof Stats] = (statWeights[stat as keyof Stats] || 0) + weight;
     });
   });
@@ -289,4 +289,5 @@ export function generateWeeklyQuest(template: any, weekStart: Date): Partial<Que
     isActive: true
   };
 }
+
 
