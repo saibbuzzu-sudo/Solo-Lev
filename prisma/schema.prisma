@@ -1,0 +1,173 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  timezone  String   @default("Europe/London")
+  level     Int      @default(1)
+  exp       Int      @default(0)
+  stats     Json     @default("{\"STR\":10,\"INT\":10,\"CHA\":10,\"WIL\":10,\"VIT\":10}")
+  titles    Json     @default("[]")
+  settings  Json     @default("{\"humorStyle\":\"standard\",\"penaltyIntensity\":\"medium\"}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  quests        Quest[]
+  completions   Completion[]
+  streaks       Streak[]
+  userTitles    UserTitle[]
+  punishments   Punishment[]
+
+  @@map("users")
+}
+
+model Quest {
+  id          String   @id @default(cuid())
+  title       String
+  type        QuestType
+  templateId  String?
+  windowStart String?  // For daily quests: "06:00"
+  windowEnd   String?  // For daily quests: "23:00"
+  deadline    DateTime? // For weekly quests
+  target      Json     // {kind: "count", value: 300, unit: "words"}
+  criteria    Json?    // For weekly quests: {kind: "countCompletions", of: "workout", value: 4}
+  affects     Json     // [{stat: "STR", weight: 1.0}, {stat: "WIL", weight: 0.5}]
+  rewardEXP   Int
+  penalty     Json?    // {exp: -10, punishmentQuestId: "squats_75"}
+  tags        Json     @default("[]")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  completions Completion[]
+
+  @@map("quests")
+}
+
+model Completion {
+  id          String        @id @default(cuid())
+  questId     String
+  userId      String
+  status      CompletionStatus
+  value       Int?          // Actual value achieved (e.g., 320 words)
+  notes       String?
+  evidenceUrl String?
+  completedAt DateTime      @default(now())
+  createdAt   DateTime      @default(now())
+
+  // Relations
+  quest Quest @relation(fields: [questId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("completions")
+}
+
+model Streak {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      StreakType
+  count     Int      @default(0)
+  lastDate  DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, kind])
+  @@map("streaks")
+}
+
+model Title {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  effects     Json?    // {stat: "WIL", value: 5, duration: "permanent"}
+  isPositive  Boolean  @default(true)
+  requirements Json?   // Conditions to unlock
+  createdAt   DateTime @default(now())
+
+  // Relations
+  userTitles UserTitle[]
+
+  @@map("titles")
+}
+
+model UserTitle {
+  id        String    @id @default(cuid())
+  userId    String
+  titleId   String
+  activeFrom DateTime @default(now())
+  activeTo   DateTime?
+  permanent Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title Title @relation(fields: [titleId], references: [id], onDelete: Cascade)
+
+  @@map("user_titles")
+}
+
+model Punishment {
+  id              String    @id @default(cuid())
+  userId          String
+  questId         String
+  punishmentType  String    // "pushups_50", "squats_75", etc.
+  dueAt           DateTime
+  resolvedAt      DateTime?
+  createdAt       DateTime  @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("punishments")
+}
+
+model QuestTemplate {
+  id          String   @id @default(cuid())
+  title       String
+  type        QuestType
+  windowStart String?
+  windowEnd   String?
+  target      Json
+  affects     Json
+  rewardEXP   Int
+  penalty     Json?
+  tags        Json     @default("[]")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("quest_templates")
+}
+
+enum QuestType {
+  DAILY
+  WEEKLY
+}
+
+enum CompletionStatus {
+  SUCCESS
+  FAIL
+  PARTIAL
+}
+
+enum StreakType {
+  DAILY
+  WEEKLY
+}
