@@ -1,8 +1,5 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  experimental: {
-    appDir: true,
-  },
-}
+// Change this line:
+recentCompletions.forEach(eval => {
 
-module.exports = nextConfig
+// To this:
+recentCompletions.forEach(completion => {
